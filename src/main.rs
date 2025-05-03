@@ -2,24 +2,20 @@ mod game;
 mod threads;
 mod entities;
 mod tools;
-mod resources;
 mod my_trait;
-mod spawner;
+mod entities_managers;
 
 use std::{env, path};
 
 //context related 
-use ggez::{Context,ContextBuilder ,GameResult};
+use ggez::{event, ContextBuilder, GameResult};
 //color related
-use ggez::graphics::Color;
 //EventHandler related
-use ggez::event::{self, EventHandler};
-use ggez::filesystem;
-
 use game::Game;
 
 fn main() -> GameResult {
 
+    //设置资源文件路径
     let resource_dir=if let Ok(manifest_dir)=env::var("CARGO_MAINIFEST_DIR"){
         let mut path=path::PathBuf::from(manifest_dir);
         path.push("assets");
@@ -29,7 +25,7 @@ fn main() -> GameResult {
     };
 
     //ctx: game context
-    let (mut ctx, mut event_loop) = ContextBuilder::new("PlantsVsZombies", "tangxianyu")
+    let (mut ctx, event_loop) = ContextBuilder::new("PlantsVsZombies", "tangxianyu")
         .window_setup(ggez::conf::WindowSetup {
             title: "Plants Vs Zombies".into(),
             vsync: true,
@@ -47,8 +43,8 @@ fn main() -> GameResult {
         .build()
         .expect("create ctx error");
     
-       
-    let mut game = Game::new(&mut ctx)?;
+    
+    let game = Game::new(&mut ctx)?;
     event::run(ctx, event_loop, game)
 }
 

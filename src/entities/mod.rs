@@ -3,3 +3,7 @@ pub mod zombie;
 pub mod bullet;
 pub mod sunshine;
 pub mod button;
+pub mod card;
+pub mod grass;
+pub mod my_enum;
+pub mod car;
