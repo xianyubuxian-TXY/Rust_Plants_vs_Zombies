@@ -1,7 +1,7 @@
 use ggez::{graphics::Image, Context, GameResult};
 use glam::Vec2;
 
-use crate::tools::{draw_blood_bar, draw_position, mydraw};
+use crate::tools::{draw_blood_bar, mydraw};
 use super::{bullet::Bullet, my_enum::plant_enum::PlantType, sunshine::Sunshine};
 //row_gap and column_gap
 use crate::entities_managers::map_manager::{ROW_GAP,COLUMN_GAP};
@@ -29,6 +29,7 @@ pub struct Plant{
     row:u32, 
     skill_time:i32, //when skill_time<=0, activate the skill
     can_activate_skill:bool,
+    damage:f32,
 }
 
 impl Plant {
@@ -46,6 +47,7 @@ impl Plant {
             row:row,
             skill_time:0,
             can_activate_skill:false,
+            damage:0.0,
         }
     }
 
@@ -58,6 +60,7 @@ impl Plant {
         self.cur_blood=self.max_blood;
         self.skill_time=self.plant_type.type_to_skill_time();
         self.can_activate_skill=false;
+        self.damage=self.plant_type.type_to_damage();
     }
 
     pub fn set_used(&mut self){
@@ -110,7 +113,7 @@ impl Plant {
 
     //豌豆射杀的技能： 发射子弹
     pub fn peashooter_shoot_bullet(&mut self,bullet:&mut Bullet){
-        bullet.init(&self.position, self.row);
+        bullet.init(&self.position, self.row,self.damage);
         //重置技能时间
     }
 

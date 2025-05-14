@@ -1,4 +1,4 @@
-use ggez::{graphics::{Image, Rect}, input::mouse::position, Context, GameResult};
+use ggez::{graphics::Image, Context, GameResult};
 use glam::Vec2;
 use rand::Rng;
 
@@ -57,42 +57,77 @@ impl Zombie {
         }
     }
 
-    pub fn init(&mut self){
-        //random seed
-        println!("init zm\n");
+    //关卡数越高，僵尸种类越多
+    pub fn init(&mut self,cur_levels:u32){
+        //随机中字
         let mut rng=rand::thread_rng(); //get random seed
-        //init zm's position and collision_rect
+        //初始话僵尸的位置、所在行
         let row=rng.gen_range(0..=4);
-        self.position.x=SCREEN_WIDTH+COLUMN_GAP;
+        self.position.x=SCREEN_WIDTH+rng.gen_range(COLUMN_GAP/2.0..COLUMN_GAP);
         self.position.y=FIRST_ROW_Y+ROW_GAP*(row as f32)+ROW_GAP/2.0;
         self.row=row;
-        //init type : the probability of zm's type: 4:2:1
+        //初始化速度
+        self.mov_speed=MOVE_SPEED;
+        //初始化僵尸类型
         let mut type_num=rng.gen_range(1..=7) as usize;
-        type_num = match type_num {
-            1..=4 => 0,
-            5..=6 => 1,
-            _ => 2,
-        };
+        match cur_levels{
+            1=>{
+                //第一关，全为“普通僵尸”
+                type_num=0;
+            },
+            2=>{
+                //第二关：普通僵尸：路障僵尸=4:3
+                match type_num{
+                    1..=4=>{
+                        type_num=0;
+                    },
+                    _=>{
+                        type_num=1;
+                    },
+                }
+            },
+            3=>{
+                //第三关：普通僵尸：路障僵尸：撑杆僵尸=3:2:2
+                match type_num{
+                    1..=3=>{
+                        type_num=0;
+                    },
+                    4..5=>{
+                        type_num=1;
+                    },
+                    _=>{
+                        type_num=2;
+                    }
+
+                }
+            }
+            _=>{},
+        }
+        //通过 “数值”->"僵尸类型"： 0：普通僵尸  1：路障僵尸  2：撑杆僵尸
         match ZombieType::try_from(type_num){
             Ok(zombie)=>self.zm_type=zombie,
             Err(e)=>println!("Error:{}",e),
         };
-        //init status
+        //初始化僵尸状态
         self.zm_status=ZombieStatus::Walk0;
-        //init width and height
+        //初始化width与height
         (self.width,self.height)=self.zm_type.type_to_width_height();
         self.used=true;
         self.frame_index=0;
-        //init blood
+        //初始化血量
         self.max_blood=self.zm_type.type_to_blood();
         self.cur_blood=self.max_blood;
-        //init dead
+        //初始化dead
         self.dead=false;
         // self.dead_dalay=DEADDELAY;
     }
 
     pub fn is_used(&self)->bool{
         self.used
+    }
+
+    pub fn set_unused(&mut self){
+        self.used=false;
     }
 
     pub fn is_dead(&self)->bool{
@@ -135,7 +170,6 @@ impl Zombie {
             self.frame_index=0;
             self.dead=true;
             self.zm_status=ZombieStatus::Dead;
-            println!("zm dead\n");
         }
     }
 
@@ -144,28 +178,24 @@ impl Zombie {
 
 impl Zombie{
     pub fn become_walk0_status(&mut self){
-        println!("become walk0\n");
         self.frame_index=0; //动画帧清0
         self.mov_speed=MOVE_SPEED; //速度恢复
         self.zm_status=ZombieStatus::Walk0;
     }
 
     pub fn become_eat_status(&mut self){
-        println!("become eat\n");
         self.frame_index=0;//动画帧清0
         self.mov_speed=0.0; //停止
         self.zm_status=ZombieStatus::Eat; //进入eat状态
     }
 
     pub fn become_jump_status(&mut self){
-        println!("become jump\n");
         self.frame_index=0;//动画帧清0
         self.mov_speed=0.0; //速度清理，“位移”在播放“跳跃帧”时发送
         self.zm_status=ZombieStatus::Jump;
     }
 
     pub fn become_walk1_status(&mut self){
-        println!("become walk1\n");
         self.frame_index=0;//动画帧清0
         self.mov_speed=MOVE_SPEED; //速度恢复
         self.zm_status=ZombieStatus::Walk1;

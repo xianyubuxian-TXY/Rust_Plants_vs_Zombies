@@ -1,14 +1,10 @@
 use ggez::{graphics::Image, Context, GameResult};
 use glam::Vec2;
 
-use crate::tools::{collision, mydraw};
+use crate::tools::mydraw;
 //row_gap and column_gap
 use crate::entities_managers::map_manager::ROW_GAP;
 
-use super::zombie::Zombie;
-
-//damage
-const DAMAGE:f32=50.0;
 //move speed
 const SPEED:f32=2.0;
 //width and height
@@ -32,7 +28,7 @@ impl Bullet{
     pub fn new()->Bullet {
         Bullet {  
             position:Vec2::new(0.0, 0.0),
-            damage:DAMAGE,
+            damage:0.0,
             speed:SPEED,
             row:0,
             used:false,
@@ -42,7 +38,7 @@ impl Bullet{
         }
     }
 
-    pub fn init(&mut self,position:&Vec2,row:u32){
+    pub fn init(&mut self,position:&Vec2,row:u32,damage:f32){
         self.position.x=position.x;
         self.position.y=position.y;
         self.used=true;
@@ -50,10 +46,15 @@ impl Bullet{
         self.frame=0;
         self.dead=false;
         self.dead_delay=DEADDELAY;
+        self.damage=damage;
     }
 
     pub fn is_used(&self)->bool{
         self.used
+    }
+
+    pub fn set_unused(&mut self){
+        self.used=false;
     }
 
     pub fn is_dead(&self)->bool{

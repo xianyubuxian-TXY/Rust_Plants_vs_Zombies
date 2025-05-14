@@ -13,14 +13,19 @@ pub struct Button {
 }
 
 impl Button{
-    pub fn new(btn_type:ButtonType,x:f32,y:f32,w:f32,h:f32,image:Vec<Image>) -> GameResult<Self> {
+    pub fn new(btn_type:ButtonType,x:f32,y:f32,w:f32,h:f32,images:Vec<Image>) -> GameResult<Self> {
         Ok(Button {
             frame:0,
             rect: Rect::new(x,y,w,h),
             button_type:btn_type,
             button_status:ButtonStatus::ButtonUp,
-            images:image,
+            images,
         })
+    }
+
+    pub fn init(&mut self){
+        self.frame=0;
+        self.button_status=ButtonStatus::ButtonUp;
     }
 
     pub fn check_click(&mut self,x:f32,y:f32)->bool
@@ -39,13 +44,13 @@ impl Button{
         self.frame=ButtonStatus::ButtonUp as usize;
     }
 
-    pub fn be_clicked(&self)->bool{
-        match self.button_status {
-            ButtonStatus::ButtonDown=>true,
-            ButtonStatus::ButtonUp=>false,
-        }
-    }
-    pub fn draw_image(&self,ctx:&mut Context)->GameResult<()> {
+    // pub fn be_clicked(&self)->bool{
+    //     match self.button_status {
+    //         ButtonStatus::ButtonDown=>true,
+    //         ButtonStatus::ButtonUp=>false,
+    //     }
+    // }
+    pub fn draw(&self,ctx:&mut Context)->GameResult<()> {
         let image=&self.images[self.frame];
         mydraw(ctx, &image, self.rect.x, self.rect.y, self.rect.w, self.rect.h)?;
         Ok(())

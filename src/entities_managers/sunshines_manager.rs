@@ -1,11 +1,10 @@
-use std::error::Error;
 use rand::Rng;
 use ggez::{Context,GameResult};
 use ggez::graphics::Image;
 use crate::entities::my_enum::sunshine_enum::SunshineType;
 use crate::entities::sunshine::Sunshine;
 use crate::my_trait::SunshineAction;
-use crate::tools::{load_animation, update_texture_path};
+use crate::tools::load_animation;
 
 //sunshie_pool_size
 const SUNSIHNEPOOLSIZE:i32 =30;
@@ -32,12 +31,19 @@ impl SunshineManager {
         })
     }
 
+    pub fn init(&mut self){
+        self.sunshine_timer=600;
+        for sunshine in self.sunshines_pool.iter_mut(){
+            sunshine.set_unused();
+        }
+    }
+
     pub fn create_sunshine(&mut self){
         self.sunshine_timer-=1;
         if self.sunshine_timer<=0{
             //reset sunshine_timer
             let mut rng=rand::thread_rng();
-            self.sunshine_timer=rng.gen_range(1200..1500);
+            self.sunshine_timer=rng.gen_range(1000..1200);
             //create sunshine
             if let Some(sunshine)=self.sunshines_pool.iter_mut().find(|s| !s.is_used()){
                 sunshine.init(SunshineType::CommonSunShine);

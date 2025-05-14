@@ -1,16 +1,21 @@
-use std::collections::btree_map::Range;
+use std::sync::mpsc;
 
 use ggez::{graphics::Image, Context, GameResult};
 use rand::Rng;
 
-use crate::{entities::{my_enum::zombie_enum::ZombieStatus, zombie::{self, Zombie}}, tools::{collision, load_animation, update_texture_path}};
+use crate::{entities::{my_enum::zombie_enum::ZombieStatus, zombie::{self, Zombie}}, game::{self, GameMod}, threads::audio_thread::AudioEvent, tools::{collision, load_animation}};
 
-use super::map_manager::{self, MapManager};
+use super::map_manager:: MapManager;
 
-//zm_pool_size
-const ZOMBIEPOOLSIZE:u32=30;
-//interval_create_time of zm
+//zm_pool 的大小
+const ZOMBIEPOOLSIZE:u32=200;
+//第一个僵尸创建的时间间隔
+// const INTERVAL_CREATE_TIME:i32=1500;
 const INTERVAL_CREATE_TIME:i32=1500;
+//僵尸吃植物音效播放间隔
+const INTERVAL_ZM_EAT_AUDIO:i32=100;
+//每一关的僵尸wave数
+const ZM_WAVES:u32=5;
 
 
 fn load_common_zm_animation(ctx:&mut Context,common_zm_animation:&mut Vec<Vec<Image>>)->GameResult<()>{
@@ -75,10 +80,13 @@ fn load_polevaulting_zm_animation(ctx:&mut Context,polevaulting_zm_animation:&mu
 pub struct ZombieManager{
     //because zm have different status, every status need different animation,so use three dimensional array
     //first index is type, second index is status
-    zm_timer:i32,
+    game_mod:GameMod, //游戏模式：普通/困难
+    cur_level:u32, //当前level
+    zm_waves:u32, //第几波僵尸： 每个level 都有10波僵尸
+    zm_timer:i32, //产生僵尸的计时器
+    zm_eat_audio_timer:i32, //僵尸吃植物音效播放间隔
     pub zm_pool:Vec<Zombie>,
     animations:Vec<Vec<Vec<Image>>>,
-
 }
 
 impl ZombieManager{
@@ -104,31 +112,98 @@ impl ZombieManager{
         animations.push(polevaulting_zm_animation);
 
         Ok(ZombieManager{
+            game_mod:GameMod::Common,
+            cur_level:1,
+            zm_waves:0,
             zm_timer:INTERVAL_CREATE_TIME,
+            zm_eat_audio_timer:INTERVAL_ZM_EAT_AUDIO,
             zm_pool:zm_pool,
             animations:animations,
          })
     }
 
-    pub fn create_zombie(&mut self){
-        self.zm_timer-=1;
-        if self.zm_timer<=0{
-            let mut rng=rand::thread_rng();
-            self.zm_timer=rng.gen_range(INTERVAL_CREATE_TIME..INTERVAL_CREATE_TIME+500);
-            //the num of zm be create every time, no more than three
-            //select zms which is unused
-            let mut zm_num=rng.gen_range(1..=2); 
-            for zombie in self.zm_pool.iter_mut().filter(|zm|!zm.is_used()){
-                zombie.init();
-                zm_num-=1;
-                if zm_num<=0{
-                    break;
-                }
-            }
+    pub fn init(&mut self){
+        self.cur_level=1;
+        self.zm_waves=0;
+        self.zm_timer=INTERVAL_CREATE_TIME;
+        for zombie in self.zm_pool.iter_mut(){
+            zombie.set_unused();
         }
     }
 
-    pub fn update_zombies_status(&mut self,map_manager:&mut MapManager){
+    pub fn set_game_mod(&mut self,game_mod:GameMod){
+        self.game_mod=game_mod;
+    }
+
+    //返回当前关卡
+    pub fn create_zombie(&mut self,audio_sender:&mpsc::Sender<AudioEvent>)->u32{
+        //每关僵尸波数未达"MAX_ZM_WAVES"，则可以继续产生僵尸(当cur_level=4时表示胜利)
+        let mod_num=self.game_mod.mod_to_num();
+        let cur_level=self.cur_level;
+        let cur_wave=self.zm_waves;
+        if cur_level<4 && self.zm_waves<(ZM_WAVES+cur_level){
+            self.zm_timer-=1;
+            if self.zm_timer<=0{
+                let mut rng=rand::thread_rng();
+                self.zm_waves+=1; //僵尸wave+1
+                //每次创建的僵尸数量
+                let mut zm_num;
+                match cur_level{
+                    1=>{
+                        zm_num=rng.gen_range(mod_num..=(mod_num+1)); //第一关：每次随机产生1~2只僵尸
+                        if self.zm_waves==1{ //第一波僵尸，播放音效
+                            audio_sender.send(AudioEvent::PlaySFX("/audio/first_wave.mp3".to_string())).expect("send failed");
+                        }
+                    },
+                    2=>{
+                        zm_num=rng.gen_range(3*mod_num..=(cur_wave+3*mod_num)); //第二关：每次随机产生2~3只僵尸
+                        if self.zm_waves==1{ //第一波僵尸，播放音效
+                            audio_sender.send(AudioEvent::PlaySFX("/audio/second_wave.mp3".to_string())).expect("send failed");
+                        }
+                    }
+                    3=>{
+                        zm_num=rng.gen_range(5*mod_num..=(cur_wave+5*mod_num));//第三关：每次随机产生3~5只僵尸
+                        if self.zm_waves==1{ //第一波僵尸，播放音效
+                            audio_sender.send(AudioEvent::PlaySFX("/audio/final_wave.mp3".to_string())).expect("send failed");
+                        }
+                    }
+                    _=>{
+                        zm_num=0;
+                    },
+                }
+                for zombie in self.zm_pool.iter_mut(){
+                    if !zombie.is_used(){
+                        zombie.init(cur_level);
+                        zm_num-=1;
+                        if zm_num<=0{
+                            break;
+                        }
+                    }
+                }
+                self.zm_timer=rng.gen_range(INTERVAL_CREATE_TIME-500..INTERVAL_CREATE_TIME-300); //重置产生僵尸的计时器
+            }
+        }
+        //当僵尸波数超过“MAX_ZM_WAVES”时，停止产生僵尸
+        //检查僵尸是否还有剩余的，当没有时-->关卡数增加(通过第3关后胜利)
+        else if self.zm_waves>=ZM_WAVES{
+            //当前关卡没有僵尸了，增加关卡
+            if let Some(zm)=self.zm_pool.iter().find(|zm| zm.is_used()){
+                if zm.is_used(){
+
+                }
+            }else{
+                self.cur_level+=1; //当cur_level=4是表示胜利
+                self.zm_waves=0; //僵尸波数清0                
+            }
+
+        }
+        self.cur_level
+    }
+
+    //返回僵尸中最小的position.x-->用于判断是否失败
+    pub fn update_zombies_status(&mut self,map_manager:&mut MapManager,audio_sender:&mpsc::Sender<AudioEvent>)->f32{
+        let mut min_x=1600.0;
+        let mut have_zm_eat=false;
         for zombie in self.zm_pool.iter_mut(){
             //存活的非死亡状态的僵尸
             if zombie.is_used() && !zombie.is_dead(){
@@ -147,17 +222,19 @@ impl ZombieManager{
                             //如果僵尸处于“walk”状态，则需要改变状态
                             if *zombie_status==ZombieStatus::Walk0 || *zombie_status==ZombieStatus::Walk1{
                                 //改变僵尸状态
-                                println!("change status");
                                 zombie.change_status();
                             }
                             //如果僵尸处于eat状态且处于“可攻击”，植物受到攻击 (攻击动画帧每次更新时，才能“真正攻击”)
-                            if *zombie.get_status()==ZombieStatus::Eat && zombie.can_attack(){
-                                plant.be_attacked(zombie.get_damage());
-                                //植物死亡，对于grass设置为unused
-                                if plant.is_dead(){
-                                    grass.set_unused();
+                            if *zombie.get_status()==ZombieStatus::Eat{
+                                have_zm_eat=true;
+                                if zombie.can_attack(){
+                                    //植物死亡，对于grass设置为unused
+                                    plant.be_attacked(zombie.get_damage());
+                                    if plant.is_dead(){
+                                        grass.set_unused();
+                                    }
+                                    zombie.attack_cooldown(); //攻击冷却
                                 }
-                                zombie.attack_cooldown(); //攻击冷却
                             } 
                         }
                     }
@@ -166,9 +243,23 @@ impl ZombieManager{
                 if !find_attack_target && *zombie.get_status()==ZombieStatus::Eat{
                     zombie.change_status();
                 }
+                if zombie.get_position().x<min_x{
+                    min_x=zombie.get_position().x;
+                }
             }
+            //必须在循环外-->因为dead并不代表“真正死亡”，要等”死亡帧“播放完后，才真正死亡（used=false）
+            //如果在循环内-->僵尸进入dead就不在update，”死亡帧“永远无法播放完，僵尸永远不会被设置为”uesd=false“
             zombie.update_status();
         }
+        if have_zm_eat{
+            self.zm_eat_audio_timer-=1;
+            if self.zm_eat_audio_timer<=0{
+                //播放音效
+                audio_sender.send(AudioEvent::PlaySFX("/audio/zombie_eat.mp3".to_string())).expect("send failed");
+                self.zm_eat_audio_timer=INTERVAL_ZM_EAT_AUDIO;
+            }
+        }
+        min_x
     }
 
     pub fn draw_zombies(&self,ctx:&mut Context)->GameResult<()>{

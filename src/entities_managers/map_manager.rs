@@ -1,8 +1,8 @@
-use std::vec;
+use std::sync::mpsc;
 
 use ggez::{graphics::{Image, Rect}, Context, GameResult};
 use glam::Vec2;
-use crate::entities::{bullet::Bullet, car::{self, Car}, card::Card, grass::Grass, my_enum::{car_enum::CarStatus, plant_enum::PlantType}, plant::Plant, sunshine::Sunshine, zombie::{self, SCREEN_WIDTH}};
+use crate::{entities::{bullet::Bullet, car::Car,grass::Grass, my_enum::{car_enum::CarStatus, plant_enum::PlantType}, plant::Plant, sunshine::Sunshine, zombie:: SCREEN_WIDTH}, threads::audio_thread::AudioEvent};
 use crate::tools::collision;
 use crate::my_trait::SunshineAction;
 use crate::tools::load_animation;
@@ -20,7 +20,7 @@ pub const ROW_GAP:f32=160.0;
 //column_gap
 pub const COLUMN_GAP:f32=130.0;
 //size of bullet_pool
-const BUTTETS_POOL_SIZE:u32=200;
+const BUTTETS_POOL_SIZE:u32=400;
 //size of sunshine_pool
 const SUNSHINES_POOL_SIZE:u32=100;
 
@@ -40,7 +40,6 @@ pub struct MapManager{
 
 impl MapManager{
     pub fn new(ctx:&mut Context)->GameResult<Self>{
-
         let mut map_to_plant=Vec::new();
         let start_x=TOP_LEFT_POSITION.x;
         let start_y=TOP_LEFT_POSITION.y;
@@ -51,7 +50,7 @@ impl MapManager{
                 let rect=Rect::new(start_x+(j as f32)*COLUMN_GAP,start_y +(i as f32)*ROW_GAP,ROW_GAP,COLUMN_GAP);
                 let draw_pos=Vec2::new(rect.x+COLUMN_GAP/2.0,rect.y+ROW_GAP/2.0);
                 let plant=Plant::new(draw_pos,i);
-                let grass=Grass::new(plant,i);
+                let grass=Grass::new(plant);
                 row.push(grass);
             }
             map_to_plant.push(row);
@@ -120,6 +119,32 @@ impl MapManager{
         })
     }
 
+    pub fn init(&mut self){
+        for row in self.grasses.iter_mut(){
+            for grass in row.iter_mut(){
+                grass.set_unused(); //grass设置unused时，对于植物也会被设置为unused
+            }
+        }
+
+        for bullet in self.bullets_pool.iter_mut(){
+            bullet.set_unused();
+        }
+
+        for sunshine in self.sunshines_pool.iter_mut(){
+            sunshine.set_unused();
+        }
+        //直接重新创建车（不想搞了）
+        let mut cars_pool=Vec::new();
+        let start_x=TOP_LEFT_POSITION.x;
+        let start_y=TOP_LEFT_POSITION.y;
+        for i in 0..ROW_NUM{
+            let position=Vec2::new(start_x-COLUMN_GAP/2.0,start_y+(i as f32)*ROW_GAP+ROW_GAP/2.0);
+            let car=Car::new(position,i);
+            cars_pool.push(car);
+        }
+        self.cars_pool=cars_pool;
+    }
+
     //选择“草格”
     pub fn select_grass(&mut self,x:f32,y:f32)->(Option<usize>,Option<usize>){
         let row=(y-TOP_LEFT_POSITION.y)/ROW_GAP;
@@ -134,7 +159,7 @@ impl MapManager{
         return (None,None)
     } 
 
-    pub fn grow_plant(&mut self,x:f32,y:f32,plant_be_select:&PlantType)->bool{
+    pub fn grow_plant(&mut self,x:f32,y:f32,plant_be_select:&PlantType,audio_sender:&mpsc::Sender<AudioEvent>)->bool{
         //选择“草格”
         if let(Some(row),Some(column))=self.select_grass(x, y)
         {
@@ -142,19 +167,23 @@ impl MapManager{
             //“草格”未被使用，则种植
             if !grass.is_used(){
                 grass.set_used();
+                //播放音效
+                audio_sender.send(AudioEvent::PlaySFX("/audio/grow_plant.mp3".to_string())).expect("send failed");
                 return grass.grow_plant(plant_be_select.clone());
             }
         }
         false
     }
 
-    pub fn remove_plant(&mut self,x:f32,y:f32){
+    pub fn remove_plant(&mut self,x:f32,y:f32,audio_sender:&mpsc::Sender<AudioEvent>){
         //选择“草格”
         if let(Some(row),Some(column))=self.select_grass(x, y){
             let grass=&mut self.grasses[row][column];
             //“草格”上中有“植物”，则“铲除”
             if grass.is_used(){
                 grass.set_unused();
+                //播放音效
+                audio_sender.send(AudioEvent::PlaySFX("/audio/remove_plant.mp3".to_string())).expect("send failed");
             }
         }
     }
@@ -210,7 +239,7 @@ impl MapManager{
     }
 
 
-    pub fn undate_bullets_status(&mut self,zombies_manager:&mut ZombieManager){
+    pub fn undate_bullets_status(&mut self,zombies_manager:&mut ZombieManager,audio_sender:&mpsc::Sender<AudioEvent>){
         for bullet in self.bullets_pool.iter_mut(){
             if bullet.is_used(){
                 //更新子弹状态
@@ -222,10 +251,13 @@ impl MapManager{
                         if zombie.is_used() && !zombie.is_dead() && zombie.get_row()==bullet.get_row(){
                             //检测是否发生碰撞
                             if collision(bullet.get_position(),zombie.get_position()){
+                                //播放音效
+                                audio_sender.send(AudioEvent::PlaySFX("/audio/bullet_zombie.mp3".to_string())).expect("send failed");
                                 //子弹进入死亡状态
                                 bullet.become_dead_status();
                                 //僵尸受到伤害
                                 zombie.be_attacked(bullet.get_damage());
+                                break; //退出循环：一个子弹一次只能攻击一只僵尸
                             }
                         }
                     }

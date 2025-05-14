@@ -1,22 +1,21 @@
-use ggez::{graphics::{Image, Rect}, Context, GameResult};
-use glam::Vec2;
+use ggez::{graphics::Image, Context, GameResult};
 
 use super::{my_enum::plant_enum::PlantType, plant::Plant};
 
 pub struct Grass{
     used:bool,
     pub plant:Plant,
-    row:u32,
+    // row:u32,
     // column:u32,
     // rect:Rect,
 }
 
 impl Grass{
-    pub fn new(plant:Plant,row:u32)->Grass{
+    pub fn new(plant:Plant)->Grass{
         Grass{
             used:false,
             plant:plant,
-            row:row,
+            // row:row,
             // column:column
             // rect:rect,
         }
@@ -45,9 +44,6 @@ impl Grass{
             self.plant.init(plant_type);
             self.plant.set_used();
             return true;
-        }
-        else{
-            panic!("plant is unused,but grass is still used, the logic is not consistent\n");
         }
         false
     }

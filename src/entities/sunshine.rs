@@ -1,14 +1,8 @@
-use std::error::Error;
-
 use ggez::graphics::Image;
 use ggez::{graphics::Rect, Context,GameResult};
 use glam::Vec2;
 use rand::Rng;
-use crate::game;
-use crate::entities_managers::background_manager::ResourceManager;
 use crate::tools::mydraw;
-use crate::game::Game;
-
 use super::my_enum::sunshine_enum::SunshineType;
 
 //mov offset after be clicked
@@ -62,11 +56,11 @@ impl Sunshine {
         self.used
     }
 
-    // pub fn set_used(&mut self){
-    //     self.used=true;
-    // }
+    pub fn set_unused(&mut self){
+        self.used=false;
+    }
 
-    pub fn check_clicked(&mut self,x:f32,y:f32){
+    pub fn check_clicked(&mut self,x:f32,y:f32)->bool{
         if !self.be_clicked {
             let m_x=self.position.x;
             let m_y=self.position.y;
@@ -74,14 +68,15 @@ impl Sunshine {
             let m_h=self.height;
             if x>=m_x && x<=(m_x+m_w) && y>=m_y && y<=(m_y+m_h){
                 self.be_clicked=true;
-                println!("be clicked\n");
+                return true;
             }
         }
+        false
     }
 
-    pub fn be_clikced(&self)->bool{
-        self.be_clicked
-    }
+    // pub fn be_clikced(&self)->bool{
+    //     self.be_clicked
+    // }
 
     pub fn init(&mut self,sunshine_type:SunshineType){
         let mut rng=rand::thread_rng(); //get random seed

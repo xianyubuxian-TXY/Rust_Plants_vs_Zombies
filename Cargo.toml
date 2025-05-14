@@ -1,7 +1,11 @@
 [package]
 name = "rusty_plants_vs_zombies"
 version = "0.1.0"
+authors = ["tangxianyu 2646163045@qq.com"]
 edition = "2024"
+
+[target.'cfg(windows)'.windows]
+subsystem = "windows"
 
 [dependencies]
 ggez="0.7.0"

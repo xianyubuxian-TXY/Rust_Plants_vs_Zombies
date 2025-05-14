@@ -7,8 +7,13 @@ pub mod sunshine_enum{
 
 
 pub mod button_enum{
+    #[derive(PartialEq)]
     pub enum ButtonType {
         GameStart,
+        GamePause,
+        GamePlaying,
+        GameRestart,
+        GameBack,
         None,
     }
     
@@ -65,6 +70,15 @@ pub mod card_enum{
                 _=>None,
             }
         }
+
+        pub fn type_to_cool_time(&self)->f32{
+            match self{
+                CardType::PeashooterCard=>500.0,
+                CardType::SunFlowerCard=>1000.0,
+                CardType::WallnutCard=>500.0,
+                _=>0.0,
+            }
+        }
     }
 }
 
@@ -98,7 +112,7 @@ pub mod plant_enum{
 
         pub fn type_to_blood(&self)->f32{
             match self {
-                PlantType::Peashooter=>100.0,
+                PlantType::Peashooter=>150.0,
                 PlantType::SunFlower=>100.0,
                 PlantType::WallNut=>300.0,
                 PlantType::NonePlant=>0.0,
@@ -107,11 +121,19 @@ pub mod plant_enum{
 
         pub fn type_to_skill_time(&self)->i32{
             match self{
-                PlantType::Peashooter=>400,
+                PlantType::Peashooter=>300,
                 PlantType::SunFlower=>1500,
                 _=>0,
             }
         }
+
+        pub fn type_to_damage(&self)->f32{
+            match self {
+                PlantType::Peashooter=>50.0,
+                _=>0.0,
+            }
+        }
+
     }
 }
 
@@ -144,18 +166,18 @@ pub mod zombie_enum{
         pub fn type_to_blood(&self)->f32{
             match self{
                 Self::CommonZM=>300.0,
-                Self::ConeHeadZM=>600.0,
-                Self::PoleVaultingZM=>500.0,
+                Self::ConeHeadZM=>700.0,
+                Self::PoleVaultingZM=>800.0,
             }
         }
 
-        pub fn type_to_x_offest(&self)->f32{
-            match self{
-                Self::CommonZM=>20.0,
-                Self::ConeHeadZM=>10.0,
-                Self::PoleVaultingZM=>10.0,
-            }
-        }
+        // pub fn type_to_x_offest(&self)->f32{
+        //     match self{
+        //         Self::CommonZM=>20.0,
+        //         Self::ConeHeadZM=>10.0,
+        //         Self::PoleVaultingZM=>10.0,
+        //     }
+        // }
     }
 
     impl TryFrom<usize> for ZombieType {

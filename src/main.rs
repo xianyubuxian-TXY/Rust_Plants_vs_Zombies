@@ -1,3 +1,4 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod game;
 mod threads;
 mod entities;
@@ -5,13 +6,13 @@ mod tools;
 mod my_trait;
 mod entities_managers;
 
-use std::{env, path};
-
+use std::{env, path, sync::mpsc};
 //context related 
-use ggez::{event, ContextBuilder, GameResult};
+use ggez::{event, graphics::Image, ContextBuilder, GameResult};
 //color related
 //EventHandler related
 use game::Game;
+use threads::audio_thread::audio_thread;
 
 fn main() -> GameResult {
 
@@ -23,6 +24,10 @@ fn main() -> GameResult {
     }else{
         path::PathBuf::from("./assets")
     };
+
+    //音效播放线程
+    let (audio_sender, audio_receiver) = mpsc::channel();
+    std::thread::spawn(move || audio_thread(audio_receiver));
 
     //ctx: game context
     let (mut ctx, event_loop) = ContextBuilder::new("PlantsVsZombies", "tangxianyu")
@@ -43,8 +48,10 @@ fn main() -> GameResult {
         .build()
         .expect("create ctx error");
     
-    
-    let game = Game::new(&mut ctx)?;
+    // let icon=Image::new(&mut ctx,"/images/background/icon.jpg")?;
+    // ctx.set_window_icon(Some(icon));
+
+    let game = Game::new(&mut ctx,audio_sender)?;
     event::run(ctx, event_loop, game)
 }
 

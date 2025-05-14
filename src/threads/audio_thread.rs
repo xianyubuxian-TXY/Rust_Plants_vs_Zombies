@@ -11,7 +11,6 @@ lazy_static! {
         std::sync::Mutex::new(HashMap::new());
 }
 
-
 // 音效类型
 pub enum AudioEvent {
     PlayBGM(String, bool), // 背景音乐文件名 + 是否循环
@@ -35,7 +34,6 @@ pub fn load_audio(ctx: &mut Context, files: &[&str]) -> GameResult<()> {
         // 使用文件路径作为 key 存储数据到池中
         pool.insert(file_path.to_str().unwrap().to_string(), Arc::new(data));
     }
-
     Ok(())
 }
 
@@ -43,42 +41,53 @@ pub fn load_audio(ctx: &mut Context, files: &[&str]) -> GameResult<()> {
 pub fn audio_thread(receiver: mpsc::Receiver<AudioEvent>) {
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();
     let bgm_sink = Sink::try_new(&stream_handle).unwrap();
-    
-    // 设置背景音乐音量（避免盖过音效）
-    bgm_sink.set_volume(0.6);
+    bgm_sink.set_volume(0.4);
     
     loop {
         match receiver.recv() {
             Ok(AudioEvent::PlayBGM(file, looped)) => {
                 if let Some(data) = AUDIO_POOL.lock().unwrap().get(&file) {
-                    bgm_sink.stop(); // 停止当前背景音乐
-                    
+                    bgm_sink.stop();
                     let cursor = std::io::Cursor::new(data.as_ref().clone());
-                    if let Ok(source) = rodio::Decoder::new(cursor) {
-                        if looped {
-                            bgm_sink.append(source.repeat_infinite());
-                        } else {
-                            bgm_sink.append(source);
+                    match rodio::Decoder::new(cursor) {
+                        Ok(source) => {
+                            if looped {
+                                bgm_sink.append(source.repeat_infinite());
+                            } else {
+                                bgm_sink.append(source);
+                            }
+                            bgm_sink.play();
+                        },
+                        Err(e) => {
+                            eprintln!("音频文件 {} 解码失败: {}", file, e);
                         }
-                        bgm_sink.play();
                     }
+                } else {
+                    eprintln!("音频文件 {} 在 AUDIO_POOL 中未找到", file);
                 }
             },
             Ok(AudioEvent::PlaySFX(file)) => {
                 if let Some(data) = AUDIO_POOL.lock().unwrap().get(&file) {
                     let cursor = std::io::Cursor::new(data.as_ref().clone());
-                    if let Ok(source) = rodio::Decoder::new(cursor) {
-                        let sink = Sink::try_new(&stream_handle).unwrap();
-                        sink.set_volume(1.0); // 音效全音量
-                        sink.append(source);
-                        sink.detach();
+                    match rodio::Decoder::new(cursor) {
+                        Ok(source) => {
+                            let sink = Sink::try_new(&stream_handle).unwrap();
+                            sink.set_volume(1.0);
+                            sink.append(source);
+                            sink.detach();
+                        },
+                        Err(e) => {
+                            eprintln!("音效文件 {} 解码失败: {}", file, e);
+                        }
                     }
+                } else {
+                    eprintln!("音效文件 {} 在 AUDIO_POOL 中未找到", file);
                 }
             },
             Ok(AudioEvent::StopBGM) => {
                 bgm_sink.stop();
             },
-            Err(_) => break, // 通道关闭时退出线程
+            Err(_) => break,
         }
     }
 }

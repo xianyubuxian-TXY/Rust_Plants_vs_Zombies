@@ -39,9 +39,9 @@ impl Card {
         &self.rect
     }
 
-    pub fn get_image(&self)->&Image{
-        &self.card_image
-    }
+    // pub fn get_image(&self)->&Image{
+    //     &self.card_image
+    // }
     pub fn draw_image(&self,ctx:& mut Context)->GameResult<()>
     {
         mydraw(ctx, &self.card_image, self.rect.x, self.rect.y, self.rect.w, self.rect.h)?;

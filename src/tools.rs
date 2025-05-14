@@ -1,8 +1,3 @@
-use std::fs::File;
-use std::io::BufReader;
-use std::path::Path;
-use rodio::{Decoder, OutputStream, Sink};
-
 use ggez::{Context, GameResult};
 use ggez::graphics::{self, Color, DrawParam, Image, Rect};
 use glam::Vec2;
@@ -107,31 +102,3 @@ pub fn collision(position1:&Vec2,position2:&Vec2)->bool{
     false
 }
 
-#[inline]
-pub fn play_mp3(mp3_path: impl AsRef<Path>) -> Result<(), String> {
-    // 1. 打开 MP3 文件
-    let file = File::open(mp3_path)
-        .map_err(|e| format!("无法打开 MP3 文件: {}", e))?;
-    
-    // 2. 创建音频输出流
-    let (_stream, stream_handle) = OutputStream::try_default()
-        .map_err(|e| format!("无法创建音频流: {}", e))?;
-    
-    // 3. 创建音频接收器 (Sink)
-    let sink = Sink::try_new(&stream_handle)
-        .map_err(|e| format!("无法创建音频接收器: {}", e))?;
-    
-    // 4. 解码 MP3 文件
-    let source = Decoder::new(BufReader::new(file))
-        .map_err(|e| format!("无法解码 MP3 文件: {}", e))?;
-    
-    // 5. 播放音频
-    sink.append(source);
-    
-    // 6. 阻塞直到播放完成（可选）
-    // 注意：此行会阻塞当前线程，适合短音效
-    // 如果是背景音乐，可移除此行避免阻塞
-    // sink.sleep_until_end();
-    
-    Ok(())
-}
