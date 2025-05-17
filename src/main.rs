@@ -6,9 +6,9 @@ mod tools;
 mod my_trait;
 mod entities_managers;
 
-use std::{env, path, sync::mpsc};
+use std::{env, path, process, sync::mpsc};
 //context related 
-use ggez::{event, graphics::Image, ContextBuilder, GameResult};
+use ggez::{event,  ContextBuilder, GameResult};
 //color related
 //EventHandler related
 use game::Game;
@@ -47,9 +47,7 @@ fn main() -> GameResult {
         .add_resource_path(resource_dir)
         .build()
         .expect("create ctx error");
-    
-    // let icon=Image::new(&mut ctx,"/images/background/icon.jpg")?;
-    // ctx.set_window_icon(Some(icon));
+
 
     let game = Game::new(&mut ctx,audio_sender)?;
     event::run(ctx, event_loop, game)

@@ -168,7 +168,10 @@ impl MapManager{
             if !grass.is_used(){
                 grass.set_used();
                 //播放音效
-                audio_sender.send(AudioEvent::PlaySFX("/audio/grow_plant.mp3".to_string())).expect("send failed");
+                match audio_sender.send(AudioEvent::PlaySFX("/audio/grow_plant.mp3".to_string())){
+                    Err(e)=>{eprintln!("send audio failed:{}",e);},
+                    Ok(_)=>{},
+                }
                 return grass.grow_plant(plant_be_select.clone());
             }
         }
@@ -183,7 +186,10 @@ impl MapManager{
             if grass.is_used(){
                 grass.set_unused();
                 //播放音效
-                audio_sender.send(AudioEvent::PlaySFX("/audio/remove_plant.mp3".to_string())).expect("send failed");
+                match audio_sender.send(AudioEvent::PlaySFX("/audio/remove_plant.mp3".to_string())){
+                    Err(e)=>{eprintln!("send audio failed:{}",e);},
+                    Ok(_)=>{},
+                }
             }
         }
     }
@@ -252,7 +258,10 @@ impl MapManager{
                             //检测是否发生碰撞
                             if collision(bullet.get_position(),zombie.get_position()){
                                 //播放音效
-                                audio_sender.send(AudioEvent::PlaySFX("/audio/bullet_zombie.mp3".to_string())).expect("send failed");
+                                match audio_sender.send(AudioEvent::PlaySFX("/audio/bullet_zombie.mp3".to_string())){
+                                    Err(e)=>{eprintln!("send audio failed:{}",e);},
+                                    Ok(_)=>{},
+                                }
                                 //子弹进入死亡状态
                                 bullet.become_dead_status();
                                 //僵尸受到伤害

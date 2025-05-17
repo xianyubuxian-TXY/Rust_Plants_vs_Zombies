@@ -5,17 +5,6 @@ use ggez::{Context, GameResult};
 use crate::entities::sunshine::Sunshine;
 use crate::threads::audio_thread::AudioEvent;
 
-// pub trait Entity {
-//     // fn update_status(&mut self,game_resource_manager:&ResourceManager)->Result<(),Box<dyn Error>>{
-//     //     Ok(())
-//     // }
-//     fn init<T>(&mut self,entity_type:T);
-//     fn update_status(&mut self);
-//     fn draw_animation(&self,ctx:&mut Context,animation:&Vec<Image>)->GameResult<()>{
-//         Ok(())
-//     }
-// }
-
 pub trait SunshineAction {
     // 返回可变引用（用于修改阳光）
     fn get_sunshines_pool_mut(&mut self) -> &mut Vec<Sunshine>;
@@ -31,7 +20,10 @@ pub trait SunshineAction {
             if sunshine.is_used() {
                 //被点击，播放音效
                 if sunshine.check_clicked(x, y){
-                    audio_send.send(AudioEvent::PlaySFX("/audio/click_sunshine.mp3".to_string())).expect("send failed");
+                    match audio_send.send(AudioEvent::PlaySFX("/audio/click_sunshine.mp3".to_string())){
+                        Err(e)=>{eprintln!("send audio sunshine.mp3 failed:{}",e);},
+                        Ok(_)=>{},
+                    }
                 }
             }
         }

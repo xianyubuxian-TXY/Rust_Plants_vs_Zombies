@@ -130,7 +130,10 @@ impl CardManager{
                     CardType::SpadeCard=>{
                         self.card_be_select=CardType::SpadeCard;
                         //选择铲子：播放音效
-                        audio_sender.send(AudioEvent::PlaySFX("/audio/click_shovel.mp3".to_string())).expect("play audio failed");
+                        match audio_sender.send(AudioEvent::PlaySFX("/audio/click_shovel.mp3".to_string())){
+                            Err(e)=>{eprintln!("send audio faied:{}",e);},
+                            Ok(_)=>{},
+                        }
                     }
                     CardType::NoneCard=>self.card_be_select=CardType::NoneCard,
                 }
@@ -153,12 +156,15 @@ impl CardManager{
             //获取“卡片名”
             let plant_name=self.cards[index].get_name();
             //通过“卡片名”为“键”，从hash_map中获取“卡片实体图片”
-            let image=self.cards_entities_images.get(plant_name).expect("get plant failed");
-            //设置绘制位置
-            let x=mouse_position.x-(image.width()/2) as f32;
-            let y=mouse_position.y-(image.height()/2) as f32; 
-            //绘制跟随鼠标的”卡片实体“
-            mydraw(ctx, image,x, y, image.width() as f32, image.height() as f32)?;
+            if let Some(image)=self.cards_entities_images.get(plant_name){
+                //设置绘制位置
+                let x=mouse_position.x-(image.width()/2) as f32;
+                let y=mouse_position.y-(image.height()/2) as f32; 
+                //绘制跟随鼠标的”卡片实体“
+                mydraw(ctx, image,x, y, image.width() as f32, image.height() as f32)?;
+            }else{
+                eprintln!("get card's entitiey failed");
+            }
         }
         Ok(())
     }

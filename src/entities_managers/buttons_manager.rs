@@ -27,35 +27,35 @@ impl ButtonManager{
         let mut start_button_images=Vec::new();
         start_button_images.push(Image::new(ctx, "/images/buttons/start_button_0.png")?); //没被按下时的图片
         start_button_images.push(Image::new(ctx, "/images/buttons/start_button_1.png")?); //被按下时的图片
-        let start_button=Button::new(ButtonType::GameStart,850.0, 200.0 , 550.0 , 240.0,start_button_images).expect("create start_button failed");
+        let start_button=Button::new(ButtonType::GameStart,850.0, 200.0 , 550.0 , 240.0,start_button_images)?;
     //加载困难模式按钮
         let mut game_hard_mod_button_images=Vec::new();
         game_hard_mod_button_images.push(Image::new(ctx,"/images/buttons/hard_mod_button_0.png")?);
         game_hard_mod_button_images.push(Image::new(ctx,"/images/buttons/hard_mod_button_1.png")?);
-        let hard_mod_button=Button::new(ButtonType::GameStart,850.0,450.0,550.0,240.0,game_hard_mod_button_images).expect("failed");
+        let hard_mod_button=Button::new(ButtonType::GameStart,850.0,450.0,550.0,240.0,game_hard_mod_button_images)?;
     //游戏暂停按钮
         let mut pause_button_images=Vec::new();
         //按下和不按下图片就一样吧
         pause_button_images.push(Image::new(ctx,"/images/buttons/pause_button.png")?);
         pause_button_images.push(Image::new(ctx,"/images/buttons/pause_button.png")?);
-        let pause_button=Button::new(ButtonType::GamePause, 0.0, 0.0, 100.0, 100.0, pause_button_images).expect("create failed");
+        let pause_button=Button::new(ButtonType::GamePause, 0.0, 0.0, 100.0, 100.0, pause_button_images)?;
     //游戏继续运行按钮
         let mut run_button_images=Vec::new();
         //按下和不按下图片就一样吧
         run_button_images.push(Image::new(ctx,"/images/buttons/run_button.png")?);
         run_button_images.push(Image::new(ctx,"/images/buttons/run_button.png")?);
-        let run_button=Button::new(ButtonType::GamePlaying, 120.0, 0.0, 100.0, 100.0, run_button_images).expect("failed");
+        let run_button=Button::new(ButtonType::GamePlaying, 120.0, 0.0, 100.0, 100.0, run_button_images)?;
     //游戏重新开始按钮
         //按下和不按下图片就一样吧
         let mut restart_button_images=Vec::new();
         restart_button_images.push(Image::new(ctx,"/images/buttons/restart_button.png")?);
         restart_button_images.push(Image::new(ctx,"/images/buttons/restart_button.png")?);
-        let restart_button=Button::new(ButtonType::GamePlaying, 0.0, 120.0, 100.0, 100.0, restart_button_images).expect("failed");
+        let restart_button=Button::new(ButtonType::GamePlaying, 0.0, 120.0, 100.0, 100.0, restart_button_images)?;
     //游戏返回按钮
         let mut back_button_images=Vec::new();
         back_button_images.push(Image::new(ctx,"/images/buttons/back_button.png")?);
         back_button_images.push(Image::new(ctx,"/images/buttons/back_button.png")?);
-        let back_button=Button::new(ButtonType::GameBack,120.0,120.0,100.0,100.0,back_button_images).unwrap();
+        let back_button=Button::new(ButtonType::GameBack,120.0,120.0,100.0,100.0,back_button_images)?;
         Ok(ButtonManager{
             game_start_button:start_button,
             game_hard_mod_button:hard_mod_button,
@@ -136,7 +136,10 @@ impl ButtonManager{
         }
         //有按钮被点击，播放音效
         if be_clicked_button!=ButtonType::None{
-            audio_sender.send(AudioEvent::PlaySFX("/audio/click_button.mp3".to_string())).expect("send failed");
+            match audio_sender.send(AudioEvent::PlaySFX("/audio/click_button.mp3".to_string())){
+                Err(e)=>{eprintln!("send audio failed:{}",e);},
+                Ok(_)=>{},
+            }
         }
         //重置被点击的按钮为ButtonType::None
         self.button_be_clicked=ButtonType::None;

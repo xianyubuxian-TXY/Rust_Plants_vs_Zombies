@@ -30,16 +30,24 @@ impl ResourceManager {
 
     //绘制开始界面背景
     pub fn draw_start_page_background(&self,ctx:&mut Context)->GameResult<()>{
-        let menu=self.texture_res.get("menu.png").expect("get image failed");
-        mydraw(ctx, &menu, 0.0,0.0, 1600.0,1000.0)?;
+        match self.texture_res.get("menu.png"){
+            Some(menu)=>{
+                mydraw(ctx, &menu, 0.0,0.0, 1600.0,1000.0)?;
+            },
+            None=>{eprintln!("draw background failed");}
+        }
         Ok(())
     }
 
     //绘制
     pub fn draw_playing_page_background(&self,ctx:&mut Context)->GameResult<()>{
         //draw map
-        let map1_img=self.texture_res.get("map1.png").expect("not find Image");
-        mydraw(ctx, &map1_img, 0.0, 0.0, 1600.0, 1000.0)?;
+        match self.texture_res.get("map1.png"){
+            Some(map1_img)=>{
+                mydraw(ctx, &map1_img, 0.0, 0.0, 1600.0, 1000.0)?;
+            },
+            None=>{eprintln!("draw map1 failed");}
+        }
         Ok(())
     }
 }

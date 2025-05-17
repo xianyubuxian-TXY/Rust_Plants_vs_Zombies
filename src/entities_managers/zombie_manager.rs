@@ -152,19 +152,28 @@ impl ZombieManager{
                     1=>{
                         zm_num=rng.gen_range(mod_num..=(mod_num+1)); //第一关：每次随机产生1~2只僵尸
                         if self.zm_waves==1{ //第一波僵尸，播放音效
-                            audio_sender.send(AudioEvent::PlaySFX("/audio/first_wave.mp3".to_string())).expect("send failed");
+                            match audio_sender.send(AudioEvent::PlaySFX("/audio/first_wave.mp3".to_string())){
+                                Err(e)=>{eprintln!("send audio failed:{}",e);},
+                                Ok(_)=>{},
+                            }
                         }
                     },
                     2=>{
                         zm_num=rng.gen_range(3*mod_num..=(cur_wave+3*mod_num)); //第二关：每次随机产生2~3只僵尸
                         if self.zm_waves==1{ //第一波僵尸，播放音效
-                            audio_sender.send(AudioEvent::PlaySFX("/audio/second_wave.mp3".to_string())).expect("send failed");
+                            match audio_sender.send(AudioEvent::PlaySFX("/audio/second_wave.mp3".to_string())){
+                                Err(e)=>{eprintln!("send audio failed:{}",e);},
+                                Ok(_)=>{},
+                            }
                         }
                     }
                     3=>{
                         zm_num=rng.gen_range(5*mod_num..=(cur_wave+5*mod_num));//第三关：每次随机产生3~5只僵尸
                         if self.zm_waves==1{ //第一波僵尸，播放音效
-                            audio_sender.send(AudioEvent::PlaySFX("/audio/final_wave.mp3".to_string())).expect("send failed");
+                            match audio_sender.send(AudioEvent::PlaySFX("/audio/final_wave.mp3".to_string())){
+                                Err(e)=>{eprintln!("send audio failed:{}",e);},
+                                Ok(_)=>{},
+                            }
                         }
                     }
                     _=>{
@@ -255,7 +264,10 @@ impl ZombieManager{
             self.zm_eat_audio_timer-=1;
             if self.zm_eat_audio_timer<=0{
                 //播放音效
-                audio_sender.send(AudioEvent::PlaySFX("/audio/zombie_eat.mp3".to_string())).expect("send failed");
+                match audio_sender.send(AudioEvent::PlaySFX("/audio/zombie_eat.mp3".to_string())){
+                    Err(e)=>{eprintln!("send audio failed:{}",e);},
+                    Ok(_)=>{},
+                }
                 self.zm_eat_audio_timer=INTERVAL_ZM_EAT_AUDIO;
             }
         }

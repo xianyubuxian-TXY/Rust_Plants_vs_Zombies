@@ -73,9 +73,9 @@ pub mod card_enum{
 
         pub fn type_to_cool_time(&self)->f32{
             match self{
-                CardType::PeashooterCard=>500.0,
-                CardType::SunFlowerCard=>1000.0,
-                CardType::WallnutCard=>500.0,
+                CardType::PeashooterCard=>400.0,
+                CardType::SunFlowerCard=>800.0,
+                CardType::WallnutCard=>400.0,
                 _=>0.0,
             }
         }
@@ -112,9 +112,9 @@ pub mod plant_enum{
 
         pub fn type_to_blood(&self)->f32{
             match self {
-                PlantType::Peashooter=>150.0,
+                PlantType::Peashooter=>200.0,
                 PlantType::SunFlower=>100.0,
-                PlantType::WallNut=>300.0,
+                PlantType::WallNut=>400.0,
                 PlantType::NonePlant=>0.0,
             }
         }
