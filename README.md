@@ -54,4 +54,45 @@
 
 
 ### 6.目录结构描述
-assets/image-20250517071900-27nobxc.png
+|-- Cargo.lock
+|-- Cargo.toml
+|-- Rust\263\314\320\362\311\350\274\306\323\357\321\324\277\316\263\314\317\356\304\277--\326\262\316\357\264\363\325\275\275\251\312\254\323\316\317\267.
+|-- assets
+|   |-- audio
+|   `-- images
+|       |-- background
+|       |-- bullets
+|       |-- buttons
+|       |-- cards
+|       |-- cars
+|       |-- plants
+|       |-- sunshine
+|       `-- zm
+`-- src
+    |-- entities
+    |   |-- bullet.rs
+    |   |-- button.rs
+    |   |-- car.rs
+    |   |-- card.rs
+    |   |-- grass.rs
+    |   |-- mod.rs
+    |   |-- my_enum.rs
+    |   |-- plant.rs
+    |   |-- sunshine.rs
+    |   `-- zombie.rs
+    |-- entities_managers
+    |   |-- background_manager.rs
+    |   |-- buttons_manager.rs
+    |   |-- cards_manager.rs
+    |   |-- map_manager.rs
+    |   |-- mod.rs
+    |   |-- sunshines_manager.rs
+    |   `-- zombie_manager.rs
+    |-- game.rs
+    |-- main.rs
+    |-- my_trait.rs
+    |-- threads
+    |   |-- audio_thread.rs
+    |   `-- mod.rs
+    `-- tools.rs
+
