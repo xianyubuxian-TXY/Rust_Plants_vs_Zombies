@@ -7,7 +7,7 @@ use crate::my_trait::SunshineAction;
 use crate::tools::load_animation;
 
 //sunshie_pool_size
-const SUNSIHNEPOOLSIZE:i32 =30;
+const SUNSIHNEPOOLSIZE:i32 =100;
 pub struct SunshineManager{
     //when sunshine_timer<=0, create a sunshine
     sunshine_timer:i32,
